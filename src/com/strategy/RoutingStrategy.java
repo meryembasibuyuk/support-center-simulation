@@ -4,6 +4,10 @@ import com.model.Agent;
 import java.util.List;
 
 public interface RoutingStrategy {
-    // Müsait temsilciler arasından kurala uygun olanı seçer
-    Agent selectAgent(List<Agent> agents);
+    /**
+     * Temsilci listesi içinden mesajın yönlendirileceği en uygun temsilciyi seçer.
+     * @param agents Sistemdeki tüm temsilcilerin listesi
+     * @return Seçilen temsilci veya tüm temsilciler meşgulse null
+     */
+    Agent route(List<Agent> agents);
 }

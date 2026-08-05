@@ -3,16 +3,14 @@ package com;
 import com.model.Agent;
 import com.model.Message;
 import com.service.SupportCenter;
-import com.strategy.FirstAvailableRoutingStrategy;
-
-
+import com.strategy.LeastBusyRoutingStrategy;
 
 public class Main {
     public static void main(String[] args) {
-        // 1. Destek merkezini 'İlk Müsait Temsilci' stratejisi ile başlat
-        SupportCenter supportCenter = new SupportCenter(new FirstAvailableRoutingStrategy());
+        System.out.println("=== DESTEK MERKEZİ SİMÜLASYONU BAŞLIYOR ===\n");
 
-        // 2. Başlangıçta 3 temsilci ekle
+        SupportCenter supportCenter = new SupportCenter(new LeastBusyRoutingStrategy());
+
         Agent agent1 = new Agent("A1", "Temsilci 1");
         Agent agent2 = new Agent("A2", "Temsilci 2");
         Agent agent3 = new Agent("A3", "Temsilci 3");
@@ -21,27 +19,21 @@ public class Main {
         supportCenter.addAgent(agent2);
         supportCenter.addAgent(agent3);
 
-        System.out.println("=== SİMÜLASYON BAŞLIYOR ===");
-// 3. Akış Senaryosu (Temsilci sayısından fazla mesaj göndererek kuyruğu test etme)
-        supportCenter.receiveMessage(new Message("M1", "Şifremi unuttum, yardım edebilir misiniz?"));
-        supportCenter.receiveMessage(new Message("M2", "İade talebi oluşturmak istiyorum."));
-        supportCenter.receiveMessage(new Message("M3", "Kargom nerede kaldı?"));
-        
-        // Bu mesajlar müsait temsilci kalmadığı için kuyruğa (Queue) eklenecek
-        supportCenter.receiveMessage(new Message("M4", "Fatura adresimi değiştirmek istiyorum."));
-        supportCenter.receiveMessage(new Message("M5", "Ürün stok bilgisi öğrenebilir miyim?"));
+        // 3. Yoğun Mesaj Akışı (Kuyruk Testi)
+        System.out.println("--- MESAJLAR GELİYOR ---");
+        supportCenter.receiveMessage(new Message("M1", "Sipariş durumu sorgulama"));
+        supportCenter.receiveMessage(new Message("M2", "Kargo gecikmesi şikayeti"));
+        supportCenter.receiveMessage(new Message("M3", "Ürün iade talebi"));
+        supportCenter.receiveMessage(new Message("M4", "Ürün stok bilgisi"));
 
-        // Temsilciler işlerini bitirdikçe kuyruktakiler otomatik olarak atanacak
-        supportCenter.completeJob(agent1); 
-        supportCenter.completeJob(agent2); 
-        
-        supportCenter.receiveMessage(new Message("M6", "Üyelik iptali hakkında."));
+        // 4. Anlık Durumu Raporla
+        supportCenter.printCurrentStatus();
 
-        supportCenter.completeJob(agent3);
-        supportCenter.completeJob(agent1);
+        // 5. Bir temsilcinin işini bitirmesi ve kuyruktaki mesajın otomatik atanması
+        System.out.println("\n--- İŞ TAMAMLAMA VE KUYRUK YÖNETİMİ ---");
+        supportCenter.completeTask("A1");
 
-        // 4. Özet Çıktısı
+        // 6. Son İstatistikleri Yazdır
         supportCenter.printSummary();
     }
 }
-       

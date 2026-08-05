@@ -5,12 +5,12 @@ import java.util.List;
 
 public class FirstAvailableRoutingStrategy implements RoutingStrategy {
     @Override
-    public Agent selectAgent(List<Agent> agents) {
+    public Agent route(List<Agent> agents) {
         for (Agent agent : agents) {
-            if (!agent.isBusy()) {
-                return agent; // Müsait olan ilk temsilciyi döndürür
+            if (agent.isAvailable()) {
+                return agent;
             }
         }
-        return null; // Müsait temsilci yoksa null döner
+        return null;
     }
 }
