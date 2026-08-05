@@ -6,6 +6,7 @@ import com.service.SupportCenter;
 import com.strategy.FirstAvailableRoutingStrategy;
 
 
+
 public class Main {
     public static void main(String[] args) {
         // 1. Destek merkezini 'İlk Müsait Temsilci' stratejisi ile başlat
@@ -21,35 +22,26 @@ public class Main {
         supportCenter.addAgent(agent3);
 
         System.out.println("=== SİMÜLASYON BAŞLIYOR ===");
-
-        // 3. Akış Senaryosu (Ödevdeki gibi aralarda tamamlanma olan akış)
-        Message m1 = new Message("M1", "Şifremi unuttum.");
-        Message m2 = new Message("M2", "Fatura detayımı öğrenmek istiyorum.");
-        Message m3 = new Message("M3", "Kargo nerede kaldı?");
-        Message m4 = new Message("M4", "Ürün arızalı geldi.");
-        Message m5 = new Message("M5", "İade talebi oluşturmak istiyorum.");
-
-        // Adım adımları simüle et
-        supportCenter.receiveMessage(m1); // A1 alır
-        supportCenter.receiveMessage(m2); // A2 alır
-        supportCenter.receiveMessage(m3); // A3 alır
+// 3. Akış Senaryosu (Temsilci sayısından fazla mesaj göndererek kuyruğu test etme)
+        supportCenter.receiveMessage(new Message("M1", "Şifremi unuttum, yardım edebilir misiniz?"));
+        supportCenter.receiveMessage(new Message("M2", "İade talebi oluşturmak istiyorum."));
+        supportCenter.receiveMessage(new Message("M3", "Kargom nerede kaldı?"));
         
-        // Tüm temsilciler doldu, bu mesaj kuyruğa girecek:
-        supportCenter.receiveMessage(m4); // Kuyruk: M4
+        // Bu mesajlar müsait temsilci kalmadığı için kuyruğa (Queue) eklenecek
+        supportCenter.receiveMessage(new Message("M4", "Fatura adresimi değiştirmek istiyorum."));
+        supportCenter.receiveMessage(new Message("M5", "Ürün stok bilgisi öğrenebilir miyim?"));
 
-        // A1 işini bitirsin -> Kuyruktaki M4'ü otomatik almalı
-        supportCenter.completeJob(agent1);
+        // Temsilciler işlerini bitirdikçe kuyruktakiler otomatik olarak atanacak
+        supportCenter.completeJob(agent1); 
+        supportCenter.completeJob(agent2); 
+        
+        supportCenter.receiveMessage(new Message("M6", "Üyelik iptali hakkında."));
 
-        // Yeni mesaj gelsin -> Yine kuyruğa girmeli
-        supportCenter.receiveMessage(m5); // Kuyruk: M5
-
-        // Temsilciler işlerini bitirsin
-        supportCenter.completeJob(agent2); // M5'i A2 alır
         supportCenter.completeJob(agent3);
         supportCenter.completeJob(agent1);
-        supportCenter.completeJob(agent2);
 
-        // 4. Özet Çıktı
+        // 4. Özet Çıktısı
         supportCenter.printSummary();
     }
 }
+       
