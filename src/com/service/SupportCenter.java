@@ -3,6 +3,7 @@ package com.service;
 import com.model.Agent;
 import com.model.Message;
 import com.strategy.RoutingStrategy;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -25,10 +26,10 @@ public class SupportCenter {
         Agent availableAgent = strategy.route(agents);
         if (availableAgent != null) {
             availableAgent.assignMessage(message);
-            System.out.println("Mesaj (" + message.getId() + ") -> " + availableAgent.getName() + " temsilcisine atandi.");
+            System.out.println("Mesaj (" + message.getId() + " - " + message.getSender().getName() + ") -> " + availableAgent.getName() + " temsilcisine atandi.");
         } else {
             waitingQueue.add(message);
-            System.out.println("Tum temsilciler dolu! Mesaj (" + message.getId() + ") kuyruga alindi.");
+            System.out.println("Tum temsilciler dolu! Mesaj (" + message.getId() + " - " + message.getSender().getName() + ") kuyruga alindi.");
         }
     }
 
@@ -41,7 +42,7 @@ public class SupportCenter {
                 if (!waitingQueue.isEmpty()) {
                     Message nextMessage = waitingQueue.poll();
                     agent.assignMessage(nextMessage);
-                    System.out.println("Kuyruktaki Mesaj (" + nextMessage.getId() + ") -> " + agent.getName() + " temsilcisine atandi.");
+                    System.out.println("Kuyruktaki Mesaj (" + nextMessage.getId() + " - " + nextMessage.getSender().getName() + ") -> " + agent.getName() + " temsilcisine atandi.");
                 }
                 break;
             }
