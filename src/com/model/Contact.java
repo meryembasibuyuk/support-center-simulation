@@ -3,23 +3,39 @@ package com.model;
 public class Contact {
     private String id;
     private String name;
-    private String email;
+    private Channel channel;
+    private Agent assignedAgent; // Müşterinin ait olduğu / zimmetli temsilci
 
-    public Contact(String id, String name, String email) {
+    // Varsayılan (Özel temsilcisi olmayan müşteri)
+    public Contact(String id, String name, Channel channel) {
         this.id = id;
         this.name = name;
-        this.email = email;
+        this.channel = channel;
+        this.assignedAgent = null;
     }
 
-    public String getId() {
-        return id;
+    // Doğrudan temsilci atamasıyla oluşturma
+    public Contact(String id, String name, Channel channel, Agent assignedAgent) {
+        this.id = id;
+        this.name = name;
+        this.channel = channel;
+        this.assignedAgent = assignedAgent;
     }
 
-    public String getName() {
-        return name;
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public Channel getChannel() { return channel; }
+    
+    public Agent getAssignedAgent() { return assignedAgent; }
+    public void setAssignedAgent(Agent assignedAgent) { this.assignedAgent = assignedAgent; }
+
+    public boolean hasAssignedAgent() {
+        return this.assignedAgent != null;
     }
 
-    public String getEmail() {
-        return email;
+    @Override
+    public String toString() {
+        String agentInfo = hasAssignedAgent() ? " (Temsilci: " + assignedAgent.getName() + ")" : " (Temsilci Yok)";
+        return name + " [" + channel + "]" + agentInfo;
     }
 }

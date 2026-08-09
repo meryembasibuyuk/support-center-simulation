@@ -1,48 +1,39 @@
 package com.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Agent {
     private String id;
     private String name;
-    private boolean available;
-    private int assignedMessageCount;
-    private Message currentMessage;
+    private List<Contact> assignedContacts; // Bu temsilciye ait müşteriler
+    private List<Message> activeMessages;   // Üzerinde çalıştığı aktif mesajlar
 
     public Agent(String id, String name) {
         this.id = id;
         this.name = name;
-        this.available = true;
-        this.assignedMessageCount = 0;
-        this.currentMessage = null;
+        this.assignedContacts = new ArrayList<>();
+        this.activeMessages = new ArrayList<>();
+    }
+
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public List<Contact> getAssignedContacts() { return assignedContacts; }
+    public List<Message> getActiveMessages() { return activeMessages; }
+
+    // Müşteriyi temsilciye bağlama (Aitlik ilişkisi)
+    public void addContact(Contact contact) {
+        if (!assignedContacts.contains(contact)) {
+            assignedContacts.add(contact);
+            contact.setAssignedAgent(this);
+        }
     }
 
     public void assignMessage(Message message) {
-        this.currentMessage = message;
-        this.available = false;
-        this.assignedMessageCount++;
+        activeMessages.add(message);
     }
 
-    public void completeCurrentTask() {
-        this.currentMessage = null;
-        this.available = true;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public boolean isAvailable() {
-        return available;
-    }
-
-    public int getAssignedMessageCount() {
-        return assignedMessageCount;
-    }
-
-    public Message getCurrentMessage() {
-        return currentMessage;
+    public int getActiveTaskCount() {
+        return activeMessages.size();
     }
 }
