@@ -1,90 +1,26 @@
 package com.service;
 
-import com.model.*;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import com.model.Contact;
+import java.util.PriorityQueue;
+import java.util.Queue;
 
 public class QueueManager {
-    private ArrayList<Contact> waiting;
-    private ArrayList<Agent> available;
-    private Session session;
+    // PriorityQueue sayesinde VIP kişiler sıranın otomatik önüne geçer
+    private Queue<Contact> queue = new PriorityQueue<>();
 
-    public QueueManager(Session session) {
-        this.waiting = new ArrayList<>();
-        this.available = new ArrayList<>();
-        this.session = session;
+    public void enqueue(Contact contact) {
+        queue.add(contact);
     }
 
-    public void addWaitingContact(Contact contact) {
-        contact.setStatus("WAITING");
-        waiting.add(contact);
-        System.out.println("⏳ [KUYRUK] Müşteri beklemeye alındı: " + contact.getName() + " " + contact.getSurname() + " (" + contact.getChannel() + ")");
-        processQueue();
+    public Contact dequeue() {
+        return queue.poll();
     }
 
-    public void addAvailableAgent(Agent agent) {
-        if (agent.getStatus() == AgentStatus.ONLINE && !available.contains(agent)) {
-            available.add(agent);
-        }
-        processQueue();
+    public boolean isEmpty() {
+        return queue.isEmpty();
     }
 
-    public void processQueue() {
-        if (waiting.isEmpty()) return;
-
-        Iterator<Contact> iterator = waiting.iterator();
-        while (iterator.hasNext()) {
-            Contact contact = iterator.next();
-            Agent matchedAgent = findAgentForContact(contact);
-
-            if (matchedAgent != null) {
-                iterator.remove();
-                available.remove(matchedAgent);
-
-                String chatHistoryId = "CHAT_" + System.currentTimeMillis();
-                session.createSession(chatHistoryId, contact, matchedAgent);
-            }
-        }
+    public Contact peek() {
+        return queue.peek();
     }
-
-    private Agent findAgentForContact(Contact contact) {
-        for (Agent agent : available) {
-            if (agent.getStatus() == AgentStatus.ONLINE && agent.getSupportedChannels().contains(contact.getChannel())) {
-                return agent;
-            }
-        }
-        return null;
-    }
-
-    public void transfer(String agentId) {
-        System.out.println("\n🔄 [TRANSFER] Agent ID: " + agentId + " durumu değişti. Çağrı aktarılıyor...");
-
-        String activeChatHistoryId = null;
-        Contact targetContact = null;
-
-        for (Map.Entry<String, HashMap<Contact, Agent>> entry : session.getSessionMap().entrySet()) {
-            HashMap<Contact, Agent> innerMap = entry.getValue();
-            for (Map.Entry<Contact, Agent> inner : innerMap.entrySet()) {
-                if (inner.getValue().getId().equals(agentId)) {
-                    activeChatHistoryId = entry.getKey();
-                    targetContact = inner.getKey();
-                    break;
-                }
-            }
-        }
-
-        if (targetContact != null && activeChatHistoryId != null) {
-            session.closeSession(activeChatHistoryId);
-            System.out.println("🔀 " + targetContact.getName() + " başka bir temsilciye aktarılmak üzere yeniden kuyruğa alınıyor...");
-            addWaitingContact(targetContact);
-        } else {
-            System.out.println("ℹ️ Agent ID: " + agentId + " üzerinde aktif oturum bulunamadı.");
-        }
-    }
-
-    public ArrayList<Contact> getWaiting() { return waiting; }
-    public ArrayList<Agent> getAvailable() { return available; }
 }

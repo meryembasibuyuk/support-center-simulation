@@ -5,5 +5,5 @@ import com.model.Contact;
 import java.util.List;
 
 public interface RoutingStrategy {
-    Agent route(Contact contact, List<Agent> agents);
+    Agent route(List<Agent> agents, Contact contact, Agent lastInteractedAgent);
 }

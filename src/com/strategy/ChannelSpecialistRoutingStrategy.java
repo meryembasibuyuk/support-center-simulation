@@ -3,18 +3,17 @@ package com.strategy;
 import com.model.Agent;
 import com.model.AgentStatus;
 import com.model.Contact;
-
 import java.util.List;
 
 public class ChannelSpecialistRoutingStrategy implements RoutingStrategy {
+
     @Override
-    public Agent route(Contact contact, List<Agent> agents) {
-        for (Agent agent : agents) {
-            // Temsilcinin ONLINE olması ve müşterinin kanalını desteklemesi gerekir
-            if (agent.getStatus() == AgentStatus.ONLINE && agent.getSupportedChannels().contains(contact.getChannel())) {
-                return agent;
-            }
-        }
-        return null; // Uygun / müsait temsilci yoksa null döner (müşteri kuyrukta bekler)
+    public Agent route(List<Agent> agents, Contact contact, Agent lastInteractedAgent) {
+        return agents.stream()
+                .filter(a -> a.supportsChannel(contact.getChannel()))
+                .filter(a -> a.getStatus() == AgentStatus.ONLINE)
+                .filter(Agent::hasCapacity)
+                .findFirst()
+                .orElse(null);
     }
 }

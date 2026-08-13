@@ -2,41 +2,46 @@ package com;
 
 import com.model.*;
 import com.service.SupportCenter;
-import com.strategy.ChannelSpecialistRoutingStrategy;
+import com.strategy.AdvancedRoutingStrategy;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("=== GELİŞMİŞ DESTEK MERKEZİ SİMÜLASYONU ===\n");
+        System.out.println("=== DESTEK MERKEZİ SİMÜLASYONU (GÜNCEL BÜTÜN SENARYOLAR) ===\n");
 
-        SupportCenter supportCenter = new SupportCenter(new ChannelSpecialistRoutingStrategy());
+        SupportCenter supportCenter = new SupportCenter(new AdvancedRoutingStrategy());
 
-        Agent agent1 = new Agent("A1", "Ahmet", "Yılmaz");
+        // 1. Temsilciler ve Kanallar Oluşturuluyor
+        Agent agent1 = new Agent("A1", "Ahmet", "Yılmaz", 2); // Max 2 kapasite
         agent1.addSupportedChannel(Channel.WHATSAPP);
+        agent1.addSupportedChannel(Channel.INSTAGRAM);
 
-        Agent agent2 = new Agent("A2", "Fatma", "Kaya");
+        Agent agent2 = new Agent("A2", "Fatma", "Kaya", 2); // Max 2 kapasite
+        agent2.addSupportedChannel(Channel.TELEGRAM);
         agent2.addSupportedChannel(Channel.FACEBOOK);
-
-        Agent agent3 = new Agent("A3", "Ali", "Demir");
-        agent3.addSupportedChannel(Channel.WHATSAPP);
 
         supportCenter.addAgent(agent1);
         supportCenter.addAgent(agent2);
-        supportCenter.addAgent(agent3);
 
-        Contact c1 = new Contact("C1", "Mehmet", "Aydın", Channel.WHATSAPP);
-        Contact c2 = new Contact("C2", "Ayşe", "Şahin", Channel.FACEBOOK);
-        Contact c3 = new Contact("C3", "Can", "Öztürk", Channel.WHATSAPP);
+        // 2. Normal Müşteri Bağlantıları
+        Contact c1 = new Contact("C1", "Mehmet", "Aydın", Channel.INSTAGRAM, false);
+        Contact c2 = new Contact("C2", "Ayşe", "Şahin", Channel.TELEGRAM, false);
+        
+        supportCenter.addContact(c1); // Ahmet'e atandı
+        supportCenter.addContact(c2); // Fatma'ya atandı
 
-        supportCenter.addContact(c1);
-        supportCenter.addContact(c2);
-        supportCenter.addContact(c3);
+        // 3. VIP Müşteri ve Sıra Önceliği Senaryosu
+        Contact c3 = new Contact("C3", "Can", "Öztürk", Channel.INSTAGRAM, true); // VIP
+        supportCenter.addContact(c3); // Kuyruğun en önüne geçer
 
-        // 4 Parametreli güncel Contact kullanımı (contId, name, surname, channel)
-        Contact c4 = new Contact("C4", "Zeynep", "Yıldız", Channel.WHATSAPP);
-        supportCenter.addContact(c4);
+        // 4. Omnichannel Çakışması Senaryosu (Mehmet başka kanaldan da yazıyor)
+        Contact c1_duplicate = new Contact("C1", "Mehmet", "Aydın", Channel.FACEBOOK, false);
+        supportCenter.addContact(c1_duplicate); // Yeni temsilci atanmaz, Ahmet'e yönlendirilir
 
-        // Transfer Senaryosu
-        agent1.setStatus(AgentStatus.OFFLINE);
-        supportCenter.transferAgent("A1");
+        // 5. Mola (ONBREAK) Senaryosu
+        System.out.println("\n--- MOLA SENARYOSU ---");
+        agent2.setStatus(AgentStatus.ONBREAK);
+
+        // 6. Mesai Bitişi (OFFLINE) Senaryosu
+        supportCenter.handleAgentOffline(agent1);
     }
 }

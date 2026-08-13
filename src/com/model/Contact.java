@@ -1,33 +1,29 @@
 package com.model;
 
-public class Contact {
-    private String contId;
+public class Contact implements Comparable<Contact> {
+    private String contactId;
     private String name;
     private String surname;
     private Channel channel;
-    private String session; // Diyagramdaki SESSION alanı
-    private String status;  // WAITING, INCALL
+    private boolean isVip;
 
-    public Contact(String contId, String name, String surname, Channel channel) {
-        this.contId = contId;
+    public Contact(String contactId, String name, String surname, Channel channel, boolean isVip) {
+        this.contactId = contactId;
         this.name = name;
         this.surname = surname;
         this.channel = channel;
-        this.session = null;
-        this.status = "WAITING";
+        this.isVip = isVip;
     }
 
-    public void sendMessage(String message) {
-        System.out.println("[Müşteri] " + name + " " + surname + " (" + channel + "): " + message);
-    }
-
-    // Getter & Setter
-    public String getContId() { return contId; }
+    public String getContactId() { return contactId; }
     public String getName() { return name; }
     public String getSurname() { return surname; }
     public Channel getChannel() { return channel; }
-    public String getSession() { return session; }
-    public void setSession(String session) { this.session = session; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public boolean isVip() { return isVip; }
+
+    // VIP olan müşterileri kuyrukta en öne geçiren kıyaslama mantığı
+    @Override
+    public int compareTo(Contact other) {
+        return Boolean.compare(other.isVip, this.isVip);
+    }
 }
