@@ -14,9 +14,4 @@ public class Message {
     public String getId() { return id; }
     public Contact getSender() { return sender; }
     public String getContent() { return content; }
-    
-    // Müşterinin kanalına doğrudan mesaj üzerinden erişim
-    public Channel getChannel() { 
-        return sender.getChannel(); 
-    }
 }

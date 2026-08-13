@@ -1,57 +1,36 @@
 package com.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Agent {
     private String id;
     private String name;
+    private String surname;
     private AgentStatus status;
-    private List<Channel> supportedChannels; // Temsilcinin hizmet verebildiği kanallar
-    private List<Contact> assignedContacts;
-    private List<Message> activeMessages;
+    private Set<Channel> supportedChannels;
 
-    public Agent(String id, String name) {
+    public Agent(String id, String name, String surname) {
         this.id = id;
         this.name = name;
-        this.status = AgentStatus.ONLINE; // Varsayılan olarak online
-        this.supportedChannels = new ArrayList<>();
-        this.assignedContacts = new ArrayList<>();
-        this.activeMessages = new ArrayList<>();
+        this.surname = surname;
+        this.status = AgentStatus.ONLINE; // Varsayılan olarak müsait
+        this.supportedChannels = new HashSet<>();
     }
 
+    public void addSupportedChannel(Channel channel) {
+        supportedChannels.add(channel);
+    }
+
+    public void sendMessage(String message) {
+        System.out.println("[Temsilci] " + name + " " + surname + ": " + message);
+    }
+
+    // Getter & Setter
     public String getId() { return id; }
     public String getName() { return name; }
+    public String getSurname() { return surname; }
     public AgentStatus getStatus() { return status; }
     public void setStatus(AgentStatus status) { this.status = status; }
-    public List<Channel> getSupportedChannels() { return supportedChannels; }
-    public List<Contact> getAssignedContacts() { return assignedContacts; }
-    public List<Message> getActiveMessages() { return activeMessages; }
-
-    // Kanal yetkisi ekleme
-    public void addSupportedChannel(Channel channel) {
-        if (!supportedChannels.contains(channel)) {
-            supportedChannels.add(channel);
-        }
-    }
-
-    // Temsilci bu kanala bakabilir mi ve müsait mi?
-    public boolean canHandle(Channel channel) {
-        return this.status == AgentStatus.ONLINE && supportedChannels.contains(channel);
-    }
-
-    public void addContact(Contact contact) {
-        if (!assignedContacts.contains(contact)) {
-            assignedContacts.add(contact);
-            contact.setAssignedAgent(this);
-        }
-    }
-
-    public void assignMessage(Message message) {
-        activeMessages.add(message);
-    }
-
-    public int getActiveTaskCount() {
-        return activeMessages.size();
-    }
+    public Set<Channel> getSupportedChannels() { return supportedChannels; }
 }

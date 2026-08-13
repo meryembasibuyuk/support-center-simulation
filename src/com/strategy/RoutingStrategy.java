@@ -1,9 +1,9 @@
 package com.strategy;
 
 import com.model.Agent;
-import com.model.Message;
+import com.model.Contact;
 import java.util.List;
 
 public interface RoutingStrategy {
-    Agent route(Message message, List<Agent> availableAgents);
+    Agent route(Contact contact, List<Agent> agents);
 }

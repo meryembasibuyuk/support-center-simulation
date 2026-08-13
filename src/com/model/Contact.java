@@ -1,41 +1,33 @@
 package com.model;
 
 public class Contact {
-    private String id;
+    private String contId;
     private String name;
+    private String surname;
     private Channel channel;
-    private Agent assignedAgent; // Müşterinin ait olduğu / zimmetli temsilci
+    private String session; // Diyagramdaki SESSION alanı
+    private String status;  // WAITING, INCALL
 
-    // Varsayılan (Özel temsilcisi olmayan müşteri)
-    public Contact(String id, String name, Channel channel) {
-        this.id = id;
+    public Contact(String contId, String name, String surname, Channel channel) {
+        this.contId = contId;
         this.name = name;
+        this.surname = surname;
         this.channel = channel;
-        this.assignedAgent = null;
+        this.session = null;
+        this.status = "WAITING";
     }
 
-    // Doğrudan temsilci atamasıyla oluşturma
-    public Contact(String id, String name, Channel channel, Agent assignedAgent) {
-        this.id = id;
-        this.name = name;
-        this.channel = channel;
-        this.assignedAgent = assignedAgent;
+    public void sendMessage(String message) {
+        System.out.println("[Müşteri] " + name + " " + surname + " (" + channel + "): " + message);
     }
 
-    public String getId() { return id; }
+    // Getter & Setter
+    public String getContId() { return contId; }
     public String getName() { return name; }
+    public String getSurname() { return surname; }
     public Channel getChannel() { return channel; }
-    
-    public Agent getAssignedAgent() { return assignedAgent; }
-    public void setAssignedAgent(Agent assignedAgent) { this.assignedAgent = assignedAgent; }
-
-    public boolean hasAssignedAgent() {
-        return this.assignedAgent != null;
-    }
-
-    @Override
-    public String toString() {
-        String agentInfo = hasAssignedAgent() ? " (Temsilci: " + assignedAgent.getName() + ")" : " (Temsilci Yok)";
-        return name + " [" + channel + "]" + agentInfo;
-    }
+    public String getSession() { return session; }
+    public void setSession(String session) { this.session = session; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }
