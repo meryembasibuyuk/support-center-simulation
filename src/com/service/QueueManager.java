@@ -3,6 +3,7 @@ package com.service;
 import com.model.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -58,15 +59,15 @@ public class QueueManager {
         return null;
     }
 
-    // Diyagramdaki transfer(agentId) metodu
     public void transfer(String agentId) {
-        System.out.println("\n🔄 [TRANSFER] Agent ID: " + agentId + " durumu değişti (OFFLINE/ONBREAK). Çağrı aktarılıyor...");
+        System.out.println("\n🔄 [TRANSFER] Agent ID: " + agentId + " durumu değişti. Çağrı aktarılıyor...");
 
         String activeChatHistoryId = null;
         Contact targetContact = null;
 
         for (Map.Entry<String, HashMap<Contact, Agent>> entry : session.getSessionMap().entrySet()) {
-            for (Map.Entry<Contact, Agent> inner : entry.getValue().entrySet()) {
+            HashMap<Contact, Agent> innerMap = entry.getValue();
+            for (Map.Entry<Contact, Agent> inner : innerMap.entrySet()) {
                 if (inner.getValue().getId().equals(agentId)) {
                     activeChatHistoryId = entry.getKey();
                     targetContact = inner.getKey();

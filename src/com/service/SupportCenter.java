@@ -1,39 +1,44 @@
 package com.service;
 
-import com.model.Agent;
-import com.model.Message;
+import com.model.*;
 import com.strategy.RoutingStrategy;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class SupportCenter {
-    private List<Agent> agents;
     private RoutingStrategy routingStrategy;
+    private QueueManager queueManager;
+    private Session session;
 
     public SupportCenter(RoutingStrategy routingStrategy) {
-        this.agents = new ArrayList<>();
         this.routingStrategy = routingStrategy;
+        this.session = new Session();
+        this.queueManager = new QueueManager(this.session);
     }
 
     public void addAgent(Agent agent) {
-        agents.add(agent);
+        queueManager.addAvailableAgent(agent);
+    }
+
+    public void addContact(Contact contact) {
+        queueManager.addWaitingContact(contact);
+    }
+
+    public void transferAgent(String agentId) {
+        queueManager.transfer(agentId);
+    }
+
+    public Session getSession() {
+        return session;
+    }
+
+    public QueueManager getQueueManager() {
+        return queueManager;
+    }
+
+    public RoutingStrategy getRoutingStrategy() {
+        return routingStrategy;
     }
 
     public void setRoutingStrategy(RoutingStrategy routingStrategy) {
         this.routingStrategy = routingStrategy;
-    }
-
-    public void handleMessage(Message message) {
-        System.out.println("\n[Yeni Mesaj] Gönderen: " + message.getSender() + " | Mesaj: \"" + message.getContent() + "\"");
-        
-        Agent assignedAgent = routingStrategy.route(message, agents);
-        
-        if (assignedAgent != null) {
-            assignedAgent.assignMessage(message);
-            System.out.println(" SUCCESS: Mesaj " + assignedAgent.getName() + " isimli temsilciye atandı.");
-        } else {
-            System.out.println(" ERROR: Mesaj atanacak uygun temsilci bulunamadı!");
-        }
     }
 }
