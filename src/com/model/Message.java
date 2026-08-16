@@ -1,9 +1,9 @@
 package com.model;
 
 public class Message {
-    private String id;
-    private Contact sender;
-    private String content;
+    private final String id;
+    private final Contact sender;
+    private final String content;
 
     public Message(String id, Contact sender, String content) {
         this.id = id;

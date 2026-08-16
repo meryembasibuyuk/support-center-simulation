@@ -9,20 +9,21 @@ public class AdvancedRoutingStrategy implements RoutingStrategy {
 
     @Override
     public Agent route(List<Agent> agents, Contact contact, Agent lastInteractedAgent) {
-        // 1. Sticky Agent Senaryosu: Dün görüştüğü temsilci ONLINE mı, kapasitesi var mı ve kanalı destekliyor mu?
-        if (lastInteractedAgent != null && 
-            lastInteractedAgent.getStatus() == AgentStatus.ONLINE &&
-            lastInteractedAgent.hasCapacity() &&
-            lastInteractedAgent.supportsChannel(contact.getChannel())) {
-            
-            System.out.println("[YÖNLENDİRME] Müşteri önceden görüştüğü temsilciye (" 
-                               + lastInteractedAgent.getName() + ") yönlendirildi.");
+        if (agents == null || agents.isEmpty() || contact == null) {
+            return null;
+        }
+
+        // 1. Sticky Agent: onceki temsilci ONLINE mi, kapasitesi var mi ve kanali destekliyor mu?
+        if (lastInteractedAgent != null
+                && lastInteractedAgent.getStatus() == AgentStatus.ONLINE
+                && lastInteractedAgent.hasCapacity()
+                && lastInteractedAgent.supportsChannel(contact.getChannel())) {
             return lastInteractedAgent;
         }
 
-        // 2. Genel Yönlendirme: Durumu ONLINE olan, kanalı destekleyen ve kapasitesi olan ilk temsilci
+        // 2. Genel yonlendirme: ONLINE, kanali destekleyen ve kapasitesi olan ilk temsilci
         return agents.stream()
-                .filter(a -> a.getStatus() == AgentStatus.ONLINE) // Mola (ONBREAK), BUSY veya OFFLINE olanlar elenir
+                .filter(a -> a.getStatus() == AgentStatus.ONLINE)
                 .filter(a -> a.supportsChannel(contact.getChannel()))
                 .filter(Agent::hasCapacity)
                 .findFirst()

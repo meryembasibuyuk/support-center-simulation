@@ -6,12 +6,11 @@ import com.strategy.AdvancedRoutingStrategy;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("=== DESTEK MERKEZİ SİMÜLASYONU (GÜNCEL BÜTÜN SENARYOLAR) ===\n");
+        System.out.println("=== DESTEK MERKEZI SIMULASYONU (REFAKTOR EDILMIS) ===\n");
 
         SupportCenter supportCenter = new SupportCenter(new AdvancedRoutingStrategy());
 
-        // 1. Temsilciler ve Kanallar Oluşturuluyor
-        Agent agent1 = new Agent("A1", "Ahmet", "Yılmaz", 2); // Max 2 kapasite
+        Agent agent1 = new Agent("A1", "Ahmet", "Yilmaz", 2); // Max 2 kapasite
         agent1.addSupportedChannel(Channel.WHATSAPP);
         agent1.addSupportedChannel(Channel.INSTAGRAM);
 
@@ -22,26 +21,30 @@ public class Main {
         supportCenter.addAgent(agent1);
         supportCenter.addAgent(agent2);
 
-        // 2. Normal Müşteri Bağlantıları
-        Contact c1 = new Contact("C1", "Mehmet", "Aydın", Channel.INSTAGRAM, false);
-        Contact c2 = new Contact("C2", "Ayşe", "Şahin", Channel.TELEGRAM, false);
-        
-        supportCenter.addContact(c1); // Ahmet'e atandı
-        supportCenter.addContact(c2); // Fatma'ya atandı
+        // Normal musteri baglantilari
+        Contact c1 = new Contact("C1", "Mehmet", "Aydin", Channel.INSTAGRAM, false);
+        Contact c2 = new Contact("C2", "Ayse", "Sahin", Channel.TELEGRAM, false);
 
-        // 3. VIP Müşteri ve Sıra Önceliği Senaryosu
-        Contact c3 = new Contact("C3", "Can", "Öztürk", Channel.INSTAGRAM, true); // VIP
-        supportCenter.addContact(c3); // Kuyruğun en önüne geçer
+        supportCenter.addContact(c1); // Ahmet'e atandi
+        supportCenter.addContact(c2); // Fatma'ya atandi
 
-        // 4. Omnichannel Çakışması Senaryosu (Mehmet başka kanaldan da yazıyor)
-        Contact c1_duplicate = new Contact("C1", "Mehmet", "Aydın", Channel.FACEBOOK, false);
-        supportCenter.addContact(c1_duplicate); // Yeni temsilci atanmaz, Ahmet'e yönlendirilir
+        // VIP musteri ve sira onceligi
+        Contact c3 = new Contact("C3", "Can", "Ozturk", Channel.INSTAGRAM, true);
+        supportCenter.addContact(c3); // Kuyrugun en onune gecer
 
-        // 5. Mola (ONBREAK) Senaryosu
+        // Omnichannel cakismasi (Mehmet baska kanaldan da yaziyor)
+        Contact c1Duplicate = new Contact("C1", "Mehmet", "Aydin", Channel.FACEBOOK, false);
+        supportCenter.addContact(c1Duplicate); // Yeni temsilci atanmaz, Ahmet'e yonlendirilir
+
+        // Mola senaryosu
         System.out.println("\n--- MOLA SENARYOSU ---");
-        agent2.setStatus(AgentStatus.ONBREAK);
+        agent2.transitionTo(AgentStatus.ONBREAK);
 
-        // 6. Mesai Bitişi (OFFLINE) Senaryosu
+        // Moladan donus senaryosu (orijinal kodda hic yoktu, agent sonsuza kadar takili kalirdi)
+        System.out.println("\n--- MOLADAN DONUS SENARYOSU ---");
+        supportCenter.returnAgentFromBreak(agent2);
+
+        // Mesai bitisi senaryosu
         supportCenter.handleAgentOffline(agent1);
     }
 }

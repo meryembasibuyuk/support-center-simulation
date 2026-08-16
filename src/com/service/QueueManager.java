@@ -1,12 +1,16 @@
 package com.service;
 
 import com.model.Contact;
-import java.util.PriorityQueue;
-import java.util.Queue;
+import java.util.concurrent.PriorityBlockingQueue;
 
+/**
+ * Thread-safe kuyruk. Onceki implementasyon ciplak bir PriorityQueue
+ * kullaniyordu ve hicbir senkronizasyonu yoktu; concurrent enqueue/dequeue
+ * cagrilarinda veri bozulmasi veya kayip riski vardi. PriorityBlockingQueue
+ * VIP onceligini korurken ic kilitlemeyi kendisi saglar.
+ */
 public class QueueManager {
-    // PriorityQueue sayesinde VIP kişiler sıranın otomatik önüne geçer
-    private Queue<Contact> queue = new PriorityQueue<>();
+    private final PriorityBlockingQueue<Contact> queue = new PriorityBlockingQueue<>();
 
     public void enqueue(Contact contact) {
         queue.add(contact);
@@ -22,5 +26,9 @@ public class QueueManager {
 
     public Contact peek() {
         return queue.peek();
+    }
+
+    public int size() {
+        return queue.size();
     }
 }

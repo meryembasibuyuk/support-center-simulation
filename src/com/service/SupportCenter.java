@@ -1,112 +1,144 @@
 package com.service;
 
-import com.model.*;
+import com.event.EventBus;
+import com.event.LoggingEventListener;
+import com.model.Agent;
+import com.model.Contact;
+import com.model.Session;
 import com.strategy.RoutingStrategy;
-import java.util.*;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * Facade: Dis API'yi (Main.java ve diger cagiranlar icin) sade tutar, arka
+ * planda QueueService / RoutingService / SessionLifecycleService /
+ * AgentLifecycleService sorumluluklarini dagitir (SRP). Onceki versiyonda
+ * bu sinif tek basina kuyruklama + routing + oturum yasam dongusu + agent
+ * yasam dongusunu yonetiyordu (god class).
+ */
 public class SupportCenter {
-    private List<Agent> agents = new ArrayList<>();
-    private List<Session> activeSessions = new ArrayList<>();
-    private QueueManager queueManager = new QueueManager();
-    private RoutingStrategy routingStrategy;
-    
-    // Sticky Agent için müşteri - temsilci geçmiş haritası
-    private Map<String, Agent> customerLastAgentMap = new HashMap<>();
+    private static final Logger LOGGER = Logger.getLogger(SupportCenter.class.getName());
+
+    private final List<Agent> agents = new CopyOnWriteArrayList<>();
+    private final Map<String, Agent> customerLastAgentMap = new ConcurrentHashMap<>();
+
+    // processQueue() bastan sona bu kilit altinda calisir; iki thread ayni
+    // anda addContact/processQueue cagirirsa bile ayni musterinin iki kez
+    // islenmesi ya da kuyrugun tutarsiz okunmasi engellenir.
+    private final ReentrantLock queueProcessingLock = new ReentrantLock();
+
+    private final QueueService queueService;
+    private final RoutingService routingService;
+    private final SessionLifecycleService sessionLifecycleService;
+    private final AgentLifecycleService agentLifecycleService;
+    private final EventBus eventBus;
 
     public SupportCenter(RoutingStrategy routingStrategy) {
-        this.routingStrategy = routingStrategy;
+        this.eventBus = new EventBus();
+        this.eventBus.subscribe(new LoggingEventListener());
+        this.queueService = new QueueService(new QueueManager());
+        this.routingService = new RoutingService(routingStrategy);
+        this.sessionLifecycleService = new SessionLifecycleService(new UuidIdGenerator(), eventBus);
+        this.agentLifecycleService = new AgentLifecycleService(eventBus);
     }
 
     public void addAgent(Agent agent) {
         agents.add(agent);
     }
 
-    // Senaryo: Gelen İletişim & Omnichannel Çakışması Kontrolü
+    /** Ek dinleyici eklemek icin (metrik toplama, dashboard vs.) disariya aciyoruz. */
+    public EventBus getEventBus() {
+        return eventBus;
+    }
+
     public void addContact(Contact contact) {
-        System.out.println("\n[GELEN ÇAĞRI] " + contact.getName() + " (" + contact.getChannel() + ") bağlandı. VIP mi: " + contact.isVip());
-        
-        // Omnichannel Collision: Müşterinin zaten açık bir oturumu var mı?
-        Session existingSession = findActiveSessionByContactId(contact.getContactId());
+        LOGGER.info("[GELEN CAGRI] " + contact.getName() + " (" + contact.getChannel()
+                + ") baglandi. VIP mi: " + contact.isVip());
+
+        Session existingSession = sessionLifecycleService.findActiveSessionByContactId(contact.getContactId());
         if (existingSession != null) {
-            System.out.println("[OMNICHANNEL] " + contact.getName() + " zaten " 
-                               + existingSession.getAgent().getName() + " ile görüşmede. Mesaj aynı temsilciye bağlandı.");
+            LOGGER.info("[OMNICHANNEL] " + contact.getName() + " zaten "
+                    + existingSession.getAgent().getName() + " ile gorusmede. Mesaj ayni temsilciye baglandi.");
             return;
         }
 
-        queueManager.enqueue(contact);
+        queueService.enqueue(contact);
         processQueue();
     }
 
     public void processQueue() {
-        while (!queueManager.isEmpty()) {
-            Contact contact = queueManager.peek();
-            Agent lastAgent = customerLastAgentMap.get(contact.getContactId());
-            
-            Agent targetAgent = routingStrategy.route(agents, contact, lastAgent);
+        queueProcessingLock.lock();
+        try {
+            while (!queueService.isEmpty()) {
+                Contact contact = queueService.peek();
+                if (contact == null) {
+                    break;
+                }
+                Agent lastAgent = customerLastAgentMap.get(contact.getContactId());
+                Agent targetAgent = routingService.findAgent(agents, contact, lastAgent);
 
-            if (targetAgent != null) {
-                queueManager.dequeue();
-                Session session = new Session("S-" + UUID.randomUUID().toString().substring(0, 4), targetAgent, contact);
-                
-                targetAgent.addSession(session);
-                activeSessions.add(session);
-                customerLastAgentMap.put(contact.getContactId(), targetAgent);
+                if (targetAgent == null) {
+                    LOGGER.info("[KUYRUKTA BEKLIYOR] " + contact.getName()
+                            + " icin uygun temsilci yok / temsilciler mesgul veya molada.");
+                    break;
+                }
 
-                System.out.println("[OTURUM BAŞLADI] Oturum ID: " + session.getSessionId() 
-                                   + " | Müşteri: " + contact.getName() 
-                                   + " -> Temsilci: " + targetAgent.getName());
-            } else {
-                System.out.println("[KUYRUKTA BEKLİYOR] " + contact.getName() + " için uygun temsilci yok / temsilciler meşgul veya molada.");
-                break;
+                Contact dequeued = queueService.dequeue();
+                try {
+                    sessionLifecycleService.startSession(targetAgent, dequeued);
+                    customerLastAgentMap.put(dequeued.getContactId(), targetAgent);
+                } catch (Exception e) {
+                    // Baska bir thread araya girip kapasiteyi doldurmus olabilir:
+                    // musteriyi kaybetmemek icin kuyruga geri koy ve dongudeyi durdur.
+                    LOGGER.log(Level.WARNING,
+                            "Oturum baslatilamadi, musteri kuyruga geri konuluyor: " + dequeued.getContactId(), e);
+                    queueService.enqueue(dequeued);
+                    break;
+                }
+            }
+        } finally {
+            queueProcessingLock.unlock();
+        }
+    }
+
+    public void handleAgentNoAnswer(Agent agent, Contact contact) {
+        agentLifecycleService.handleNoAnswer(agent, contact);
+        queueService.enqueue(contact);
+        processQueue();
+    }
+
+    /** Orijinal kodda karsiligi olmayan yeni metot: moladaki temsilciyi tekrar aktif eder. */
+    public void returnAgentFromBreak(Agent agent) {
+        agentLifecycleService.returnFromBreak(agent);
+        processQueue();
+    }
+
+    public void transferSession(Session session, Agent targetAgent) {
+        try {
+            sessionLifecycleService.transferSession(session, targetAgent);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "[TRANSFER BASARISIZ] " + e.getMessage());
+        }
+    }
+
+    public void handleAgentOffline(Agent agent) {
+        agentLifecycleService.handleOffline(agent);
+
+        List<Session> toRequeue = new ArrayList<>(sessionLifecycleService.getActiveSessions());
+        for (Session session : toRequeue) {
+            if (session.getAgent().equals(agent)) {
+                sessionLifecycleService.endSession(session, "agent_offline");
+                LOGGER.info("[MESAI BITISI] " + session.getContact().getName() + " musterisi tekrar kuyruga aktariliyor.");
+                queueService.enqueue(session.getContact());
             }
         }
-    }
-
-    // Senaryo: Pas Geçme (Agent No-Answer)
-    public void handleAgentNoAnswer(Agent agent, Contact contact) {
-        System.out.println("\n[PAS GEÇTİ] " + agent.getName() + " yanıt vermedi. Geçici olarak molaya/pasife alınıyor...");
-        agent.setStatus(AgentStatus.ONBREAK);
-        
-        // Müşteriyi kuyruğa geri koy ve yeniden yönlendir
-        queueManager.enqueue(contact);
         processQueue();
-    }
-
-    // Senaryo: Transfer (Escalation)
-    public void transferSession(Session session, Agent targetAgent) {
-        if (targetAgent.getStatus() == AgentStatus.ONLINE && targetAgent.hasCapacity()) {
-            Agent oldAgent = session.getAgent();
-            oldAgent.removeSession(session);
-            
-            session.setAgent(targetAgent);
-            targetAgent.addSession(session);
-            
-            System.out.println("\n[TRANSFER] Oturum " + oldAgent.getName() 
-                               + " temsilcisinden " + targetAgent.getName() + " temsilcisine devredildi.");
-        } else {
-            System.out.println("\n[TRANSFER BAŞARISIZ] Hedef temsilci müsait değil.");
-        }
-    }
-
-    // Senaryo: Mesai Bitişi (Agent Offline)
-    public void handleAgentOffline(Agent agent) {
-        System.out.println("\n[MESAİ BİTİŞİ] Temsilci " + agent.getName() + " offline oldu.");
-        agent.setStatus(AgentStatus.OFFLINE);
-
-        List<Session> sessionsToTransfer = new ArrayList<>(agent.getActiveSessions());
-        for (Session session : sessionsToTransfer) {
-            agent.removeSession(session);
-            activeSessions.remove(session);
-            System.out.println("[MESAİ BİTİŞİ] " + session.getContact().getName() + " müşterisi tekrar kuyruğa aktarılıyor.");
-            queueManager.enqueue(session.getContact());
-        }
-        processQueue();
-    }
-
-    private Session findActiveSessionByContactId(String contactId) {
-        return activeSessions.stream()
-                .filter(s -> s.getContact().getContactId().equals(contactId))
-                .findFirst()
-                .orElse(null);
     }
 }
