@@ -2,11 +2,6 @@ package com.event;
 
 import java.util.logging.Logger;
 
-/**
- * Onceki System.out.println tabanli loglamanin yerini alir. Gercek bir
- * projede burasi SLF4J/Logback ile degistirilebilir; EventListener arayuzu
- * sayesinde bu degisiklik is kurallarina hic dokunmadan yapilabilir.
- */
 public class LoggingEventListener implements EventListener {
     private static final Logger LOGGER = Logger.getLogger("SupportCenter");
 

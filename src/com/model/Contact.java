@@ -13,7 +13,7 @@ public class Contact implements Comparable<Contact> {
     private final Instant enqueuedAt;
 
     public Contact(String contactId, String name, String surname, Channel channel, boolean isVip) {
-        if (contactId == null || contactId.isBlank()) {
+        if (contactId == null || contactId.trim().isEmpty()) {
             throw new IllegalArgumentException("contactId bos olamaz");
         }
         if (channel == null) {

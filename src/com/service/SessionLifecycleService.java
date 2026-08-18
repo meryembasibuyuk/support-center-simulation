@@ -4,19 +4,16 @@ import com.event.EventBus;
 import com.event.SessionEndedEvent;
 import com.event.SessionStartedEvent;
 import com.event.TransferEvent;
-import com.exception.AgentNotAvailableException;
 import com.model.Agent;
-import com.model.AgentStatus;
 import com.model.Contact;
 import com.model.Session;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * Oturumlarin (Session) yasam dongusunu yonetir: baslatma, bitirme, transfer.
- * Onceki tek-god-class SupportCenter'dan ayristirilarak SRP saglanir.
- */
+
 public class SessionLifecycleService {
     private final List<Session> activeSessions = new CopyOnWriteArrayList<>();
     private final IdGenerator idGenerator;
@@ -42,14 +39,16 @@ public class SessionLifecycleService {
     }
 
     public void transferSession(Session session, Agent targetAgent) {
-        if (targetAgent.getStatus() != AgentStatus.ONLINE || !targetAgent.hasCapacity()) {
-            throw new AgentNotAvailableException(
-                    "Hedef temsilci (" + targetAgent.getAgentId() + ") transfer icin musait degil.");
-        }
         Agent oldAgent = session.getAgent();
-        oldAgent.removeSession(session);
+        if (oldAgent != null && oldAgent.equals(targetAgent)) {
+            return; // zaten bu temsilcide, yapilacak bir sey yok
+        }
+
+        targetAgent.addSession(session); // atomik kontrol + ekleme, uygun degilse burada fırlatir
+        if (oldAgent != null) {
+            oldAgent.removeSession(session);
+        }
         session.setAgent(targetAgent);
-        targetAgent.addSession(session);
         eventBus.publish(new TransferEvent(session, oldAgent, targetAgent));
     }
 
@@ -63,6 +62,7 @@ public class SessionLifecycleService {
     }
 
     public List<Session> getActiveSessions() {
-        return List.copyOf(activeSessions);
+        // Java 8 uyumlu: List.copyOf() Java 10+ gerektirir
+        return Collections.unmodifiableList(new ArrayList<>(activeSessions));
     }
 }

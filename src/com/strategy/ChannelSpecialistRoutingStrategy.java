@@ -3,7 +3,9 @@ package com.strategy;
 import com.model.Agent;
 import com.model.AgentStatus;
 import com.model.Contact;
+import java.util.Comparator;
 import java.util.List;
+
 
 public class ChannelSpecialistRoutingStrategy implements RoutingStrategy {
 
@@ -16,7 +18,7 @@ public class ChannelSpecialistRoutingStrategy implements RoutingStrategy {
                 .filter(a -> a.supportsChannel(contact.getChannel()))
                 .filter(a -> a.getStatus() == AgentStatus.ONLINE)
                 .filter(Agent::hasCapacity)
-                .findFirst()
+                .min(Comparator.comparingInt(a -> a.getSupportedChannels().size()))
                 .orElse(null);
     }
 }

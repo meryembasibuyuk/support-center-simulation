@@ -8,12 +8,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * RoutingStrategy cagrisini guvenli bir sinir icine alir: strateji icinde
- * beklenmeyen bir exception firlarsa (orn. null referans) tum kuyruk isleme
- * akisini cokertmek yerine bu hata izole edilir, loglanir ve o musteri
- * kuyrukta bekletilir; diger musteriler etkilenmez.
- */
 public class RoutingService {
     private static final Logger LOGGER = Logger.getLogger(RoutingService.class.getName());
     private final RoutingStrategy strategy;

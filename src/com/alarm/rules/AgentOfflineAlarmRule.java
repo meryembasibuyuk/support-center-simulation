@@ -10,8 +10,7 @@ import com.model.Agent;
 import java.util.Optional;
 import java.util.UUID;
 
-
-public class AbnormalSessionEndAlarmRule implements AlarmRule {
+public class AgentOfflineAlarmRule implements AlarmRule {
 
     @Override
     public Optional<Alarm> evaluate(DomainEvent event) {
@@ -19,15 +18,19 @@ public class AbnormalSessionEndAlarmRule implements AlarmRule {
             AgentOfflineEvent offlineEvent = (AgentOfflineEvent) event;
             Agent agent = offlineEvent.getAgent();
 
-            String message = "Session, temsilci " + agent.getAgentId()
-                    + " offline oldugu icin anormal sekilde sonlandi.";
+            // Null kontrolu: agent bilgisi olmadan alarm mesaji uretilemez.
+            if (agent == null) {
+                return Optional.empty();
+            }
+
+            String fullName = agent.getName() + " " + agent.getSurname();
 
             return Optional.of(new Alarm(
-                    UUID.randomUUID().toString(),
-                    AlarmSeverity.WARNING,
-                    message,
-                    "AgentOfflineEvent",
-                    event.occurredAt()
+                UUID.randomUUID().toString(),
+                AlarmSeverity.WARNING,
+                String.format("Agent çevrimdışı oldu: %s (ID: %s)", fullName, agent.getAgentId()),
+                "AgentOfflineEvent",
+                offlineEvent.occurredAt()
             ));
         }
         return Optional.empty();

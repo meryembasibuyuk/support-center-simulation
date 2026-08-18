@@ -3,12 +3,7 @@ package com.service;
 import com.model.Contact;
 import java.util.concurrent.PriorityBlockingQueue;
 
-/**
- * Thread-safe kuyruk. Onceki implementasyon ciplak bir PriorityQueue
- * kullaniyordu ve hicbir senkronizasyonu yoktu; concurrent enqueue/dequeue
- * cagrilarinda veri bozulmasi veya kayip riski vardi. PriorityBlockingQueue
- * VIP onceligini korurken ic kilitlemeyi kendisi saglar.
- */
+
 public class QueueManager {
     private final PriorityBlockingQueue<Contact> queue = new PriorityBlockingQueue<>();
 

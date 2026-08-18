@@ -7,9 +7,7 @@ import com.model.Agent;
 import com.model.AgentStatus;
 import com.model.Contact;
 
-/**
- * Temsilcinin durum gecislerini (no-answer, offline, moladan donus) yonetir.
- */
+
 public class AgentLifecycleService {
     private final EventBus eventBus;
 
@@ -17,12 +15,6 @@ public class AgentLifecycleService {
         this.eventBus = eventBus;
     }
 
-    /**
-     * Temsilci yanit vermediginde gecici olarak molaya alinir.
-     * NOT: Bu durum kalici degildir - returnFromBreak() ile temsilci tekrar
-     * ONLINE'a donebilir. Orijinal kodda bu geri donus hic yoktu ve temsilci
-     * sonsuza kadar ONBREAK durumunda kaliyordu.
-     */
     public void handleNoAnswer(Agent agent, Contact contact) {
         agent.transitionTo(AgentStatus.ONBREAK);
         eventBus.publish(new AgentNoAnswerEvent(agent, contact));

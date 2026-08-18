@@ -16,13 +16,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Facade: Dis API'yi (Main.java ve diger cagiranlar icin) sade tutar, arka
- * planda QueueService / RoutingService / SessionLifecycleService /
- * AgentLifecycleService sorumluluklarini dagitir (SRP). Onceki versiyonda
- * bu sinif tek basina kuyruklama + routing + oturum yasam dongusu + agent
- * yasam dongusunu yonetiyordu (god class).
- */
+
 public class SupportCenter {
     private static final Logger LOGGER = Logger.getLogger(SupportCenter.class.getName());
 
@@ -40,10 +34,15 @@ public class SupportCenter {
     private final AgentLifecycleService agentLifecycleService;
     private final EventBus eventBus;
 
+    /** Geriye donuk uyumluluk icin: varsayilan kuyruk asiri yuklenme esigi 5. */
     public SupportCenter(RoutingStrategy routingStrategy) {
+        this(routingStrategy, 5);
+    }
+
+    public SupportCenter(RoutingStrategy routingStrategy, int queueOverloadThreshold) {
         this.eventBus = new EventBus();
         this.eventBus.subscribe(new LoggingEventListener());
-        this.queueService = new QueueService(new QueueManager());
+        this.queueService = new QueueService(new QueueManager(), eventBus, queueOverloadThreshold);
         this.routingService = new RoutingService(routingStrategy);
         this.sessionLifecycleService = new SessionLifecycleService(new UuidIdGenerator(), eventBus);
         this.agentLifecycleService = new AgentLifecycleService(eventBus);

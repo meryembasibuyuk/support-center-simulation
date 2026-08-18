@@ -3,20 +3,14 @@ package com.model;
 import com.exception.AgentNotAvailableException;
 import com.exception.InvalidStateTransitionException;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Thread-safe hale getirilmis Agent sinifi.
- *
- * Onceki versiyonda hasCapacity() kontrolu ile addSession() cagrisi arasinda
- * atomiklik yoktu: iki thread ayni anda hasCapacity()==true gorup ayni
- * temsilciye maxCapacity ustunde oturum ekleyebiliyordu (klasik TOCTOU / race
- * condition). Burada tum kapasite kontrolu + ekleme + durum gecisi tek bir
- * ReentrantLock altinda atomik olarak yapiliyor.
- */
+
 public class Agent {
     private final String agentId;
     private final String name;
@@ -28,7 +22,7 @@ public class Agent {
     private final ReentrantLock lock = new ReentrantLock();
 
     public Agent(String agentId, String name, String surname, int maxCapacity) {
-        if (agentId == null || agentId.isBlank()) {
+        if (agentId == null || agentId.trim().isEmpty()) {
             throw new IllegalArgumentException("agentId bos olamaz");
         }
         if (maxCapacity <= 0) {
@@ -51,6 +45,11 @@ public class Agent {
         return supportedChannels.contains(channel);
     }
 
+    
+    public List<Channel> getSupportedChannels() {
+        return Collections.unmodifiableList(new ArrayList<>(supportedChannels));
+    }
+
     public boolean hasCapacity() {
         lock.lock();
         try {
@@ -60,11 +59,7 @@ public class Agent {
         }
     }
 
-    /**
-     * Kapasite kontrolu + ekleme + gerekiyorsa BUSY'e gecis tek kilit altinda,
-     * atomik olarak yapilir. Kapasite doluysa veya temsilci ONLINE degilse
-     * AgentNotAvailableException firlatilir (sessizce yanlis davranmak yerine).
-     */
+    
     public void addSession(Session session) {
         lock.lock();
         try {
@@ -95,10 +90,7 @@ public class Agent {
         }
     }
 
-    /**
-     * Durum gecisini AgentStatus'daki gecis tablosuna gore dogrulayarak uygular.
-     * Gecersiz bir gecis InvalidStateTransitionException firlatir.
-     */
+    
     public void transitionTo(AgentStatus target) {
         lock.lock();
         try {
@@ -120,7 +112,7 @@ public class Agent {
     public String getName() { return name; }
     public String getSurname() { return surname; }
     public AgentStatus getStatus() { return status; }
-    public List<Session> getActiveSessions() { return List.copyOf(activeSessions); }
+    public List<Session> getActiveSessions() { return Collections.unmodifiableList(new ArrayList<>(activeSessions)); }
 
     @Override
     public boolean equals(Object o) {
